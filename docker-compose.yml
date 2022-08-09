@@ -1,0 +1,90 @@
+version: '3.9'
+
+services:
+
+  backend:
+    #Naming the containerdocker-co
+    container_name: backend
+    #Location of the Dockerfile in the backend folder
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    #Laravel environment variables
+    environment:
+        DB_HOST: db
+        DB_DATABASE: laravel
+        DB_USERNAME: root
+        DB_PASSWORD: ia21240
+
+    ports:
+        # First port is the container port and the second port is the exposed port so you can access your backend on your computer
+        - 8000:8000
+    # To store the new changes from your local environment to the docker container 
+    # if you don't use volumnes if you change anything in your code on your computer 
+    # it will not change anything in the docker container
+    volumes:
+        - ./backend:/app/backend
+    # This Backend (Laravel) depends on database
+    depends_on:
+          - db
+    # network setting to make sure all containers are able to access each other
+    networks:
+        - app
+
+  # Frontend (react)
+  frontend:
+      container_name: frontend
+
+      build: 
+        context: ./frontend
+        dockerfile: Dockerfile
+
+      ports:
+        - 3000:3000
+
+      volumes:
+        - ./frontend:/app/frontend
+
+      depends_on:
+        - backend
+
+      networks:
+          - app
+
+
+  db:
+    image: mysql
+    volumes:
+      - ./db:/app/db
+    restart: always
+    networks:
+      - app
+
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: 'user1'
+      MYSQL_PASSWORD: 'ia21240'
+      MYSQL_ROOT_PASSWORD: 'ia21240'
+
+      # phpmyadmin
+  phpmyadmin:
+    depends_on:
+      - db
+    image: phpmyadmin/phpmyadmin
+    restart: always
+    ports:
+      - '8080:80'
+
+    environment:
+    #PMA_HOST we are connecting phpmyadmin to mysql because we name it db
+      PMA_HOST: db
+      MYSQL_USER: 'user1'
+      MYSQL_PASSWORD: 'ia21240'
+
+
+    networks:
+        - app
+# configure the network to be able to use it in all containers
+networks:
+  app:
+    driver: bridge
